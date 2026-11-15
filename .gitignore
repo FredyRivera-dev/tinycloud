@@ -1,0 +1,46 @@
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Frontend build output and dependencies
+front-end/node_modules/
+front-end/.next/
+front-end/out/
+front-end/build/
+front-end/.vercel/
+front-end/next-env.d.ts
+front-end/*.tsbuildinfo
+
+# Backend build output and coverage
+back-end/bin/
+back-end/tmp/
+back-end/api
+back-end/tinycloud-api
+coverage.out
+*.test
+
+# Tooling caches
+.turbo/
+*.tsbuildinfo
+
+# Local Docker overrides
+docker-compose.override.yml
+docker/*.override.yml
+docker/*.local.yml
+
+# Editors and OS files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*

@@ -1,0 +1,70 @@
+name: tinycloud-dev
+
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: tinycloud-dev-full-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tinycloud
+      POSTGRES_PASSWORD: tinycloud
+      POSTGRES_DB: tinycloud
+    volumes:
+      - tinycloud-dev-full-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tinycloud -d tinycloud"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ../back-end
+      dockerfile: Dockerfile
+    container_name: tinycloud-dev-api
+    restart: unless-stopped
+    environment:
+      PORT: "5950"
+      DATABASE_URL: postgres://tinycloud:tinycloud@db:5432/tinycloud?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-me-please}
+      CORS_ORIGIN: http://localhost:3000,http://127.0.0.1:3000
+      # Optional env bootstrap. Leave empty to use the /setup first-run screen.
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_DISPLAY_NAME: ${ADMIN_DISPLAY_NAME:-TinyCloud Admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      STATS_INTERVAL: ${STATS_INTERVAL:-60s}
+      STATS_RETENTION_DAYS: ${STATS_RETENTION_DAYS:-90}
+      # Host metrics: the real /proc and / are mounted read-only below.
+      HOST_PROC: /host/proc
+      HOST_ROOT: /host
+      PG_POOL_MAX: ${PG_POOL_MAX:-10}
+      PG_POOL_MIN: ${PG_POOL_MIN:-2}
+    ports:
+      # Debug only: keep the API private to the host.
+      - "127.0.0.1:5950:5950"
+    volumes:
+      - /proc:/host/proc:ro
+      - /:/host:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ../front-end
+      dockerfile: Dockerfile
+      args:
+        API_PROXY_TARGET: http://api:5950
+    container_name: tinycloud-dev-web
+    restart: unless-stopped
+    environment:
+      API_PROXY_TARGET: http://api:5950
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  tinycloud-dev-full-db-data:
